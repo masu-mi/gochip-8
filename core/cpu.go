@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+
+	"github.com/masu-mi/gochip-8/env"
 )
 
 // CHIP-8 emulator
@@ -68,7 +70,6 @@ func (cpu *Cpu) Run(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 func (cpu *Cpu) Tick(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 	op := ram.Buf[cpu.Pc : cpu.Pc+2]
 	inst := NewInstruction(op)
-	fmt.Printf(", op: %v\n", inst)
 	switch inst.o1 {
 	case 0x0:
 		switch {
@@ -305,10 +306,8 @@ func bite(n1, n2 uint8) uint8 {
 	return n1<<4 + n2
 }
 
-const debug bool = true
-
 func trace(msg string, d ...interface{}) {
-	if debug {
+	if env.DEBUG {
 		fmt.Printf(fmt.Sprintf("%s\n", msg), d...)
 	}
 }
