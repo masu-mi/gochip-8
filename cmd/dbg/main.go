@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("can't open `%s`\n", *path)
 	}
 	defer f.Close()
-	n, e := chip.Load(f)
+	n, e := chip.Init(f)
 	if e != nil {
 		log.Fatalln(e)
 	}

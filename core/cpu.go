@@ -18,7 +18,10 @@ type Chip8 struct {
 
 const StartOfProgram = 0x200
 
-func (chip *Chip8) Load(rom io.Reader) (int, error) {
+func (chip *Chip8) Init(rom io.Reader) (int, error) {
+	for i, f := range Font {
+		copy(chip.Memory.Buf[fontAddr(uint8(i)):fontAddr(uint8(i))+5], f[0:])
+	}
 	return chip.Memory.Load(StartOfProgram, rom)
 }
 
@@ -44,11 +47,12 @@ type Cpu struct {
 }
 
 func NewCpu(buz Buzzer) *Cpu {
-	return &Cpu{
+	c := &Cpu{
 		Pc: StartOfProgram,
 		Dt: NewDelayedTimer(60, nil),
 		St: NewDelayedTimer(60, buz),
 	}
+	return c
 }
 
 func (cpu *Cpu) Run(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
@@ -57,22 +61,6 @@ func (cpu *Cpu) Run(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 			break
 		}
 		cpu.Tick(ram, disp, keys, buz)
-	}
-}
-
-func addr(n1, n2, n3 uint8) uint16 {
-	return uint16(n1)<<8 + uint16(n2)<<4 + uint16(n3)
-}
-
-func bite(n1, n2 uint8) uint8 {
-	return n1<<4 + n2
-}
-
-var debug bool = true
-
-func trace(msg string, d ...interface{}) {
-	if debug {
-		fmt.Printf(fmt.Sprintf("%s\n", msg), d...)
 	}
 }
 
@@ -259,29 +247,70 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 		// TODO
 		switch {
 		case inst.o3 == 0x0 && inst.o4 == 0x7:
-			// Fx07 - LD Vx, DT; Set Vx = delay timer value.
+			trace("Fx07 - LD V%d, DT", inst.o2)
+			cpu.V[inst.o2] = cpu.Dt.GetV()
 		case inst.o3 == 0x0 && inst.o4 == 0xA:
+			trace("Fx0A - LD V%d, K", inst.o2)
+			// TODO more less CPU consuption
+		BLOCK:
+			for {
+				pressed := keys.PressedKeys()
+				for _, key := range pressed {
+					if key == cpu.V[inst.o2] {
+						break BLOCK
+					}
+				}
+			}
 			// Fx0A - LD Vx, K; Wait for a key press, store the value of the key in Vx.
 		case inst.o3 == 0x1 && inst.o4 == 0x5:
-			// Fx15 - LD DT, Vx; Set delay timer = Vx.
+			trace("Fx15 - LD DT, V%d", inst.o2)
+			cpu.Dt.SetV(cpu.V[inst.o2])
 		case inst.o3 == 0x1 && inst.o4 == 0x8:
-			// ADD I, Vx; Set I = I + Vx.
+			trace("Fx18 - LD ST, V%d", inst.o2)
+			cpu.St.SetV(cpu.V[inst.o2])
 		case inst.o3 == 0x1 && inst.o4 == 0xE:
-			// Fx1E - ADD I, Vx; Set I = I + Vx.
+			trace("Fx1E - ADD I, V%d", inst.o2)
+			cpu.I += uint16(cpu.V[inst.o2])
 		case inst.o3 == 0x2 && inst.o4 == 0x9:
-			// LD F, Vx; Set I = location of sprite for digit Vx.
+			trace("Fx29 - LD F, V%d", inst.o2)
+			cpu.I = fontAddr(inst.o2)
 		case inst.o3 == 0x3 && inst.o4 == 0x3:
-			// Fx33 - LD B, Vx; Store BCD representation of Vx in memory locations I, I+1, and I+2.
+			trace("Fx33 - LD B, V%d", inst.o2)
+			ram.Buf[cpu.I], ram.Buf[cpu.I+1], ram.Buf[cpu.I+2] = bcd(cpu.V[inst.o2])
 		case inst.o3 == 0x5 && inst.o4 == 0x5:
-			// Fx55 - LD [I], Vx; Store registers V0 through Vx in memory starting at location I.
+			trace("Fx55 - LD [I], V%d", inst.o2)
+			copy(ram.Buf[cpu.I:(cpu.I+uint16(inst.o2)+1)], cpu.V[0:inst.o2+1])
 		case inst.o3 == 0x6 && inst.o4 == 0x5:
-			// LD Vx, [I]; Read registers V0 through Vx from memory starting at location I.
+			trace("Fx65 - LD V%d, [I]", inst.o2)
+			copy(cpu.V[0:inst.o2+1], ram.Buf[cpu.I:(cpu.I+uint16(inst.o2)+1)])
 		}
 	}
 	// All instructions are 2 bytes long and are stored most-significant-byte first.
 	// In memory, the first byte of each instruction should be located at an even addresses.
 	// If a program includes sprite data, it should be padded so any instructions following it will be properly situated in RAM.
 	cpu.Pc += 2
+}
+
+func bcd(v uint8) (h, t, o uint8) {
+	o = v % 10
+	v /= 10
+	t = v % 10
+	h = v / 10
+	return
+}
+func addr(n1, n2, n3 uint8) uint16 {
+	return uint16(n1)<<8 + uint16(n2)<<4 + uint16(n3)
+}
+func bite(n1, n2 uint8) uint8 {
+	return n1<<4 + n2
+}
+
+const debug bool = true
+
+func trace(msg string, d ...interface{}) {
+	if debug {
+		fmt.Printf(fmt.Sprintf("%s\n", msg), d...)
+	}
 }
 
 type instruction struct {
