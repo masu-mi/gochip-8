@@ -14,7 +14,7 @@ type Chip8 struct {
 	*Cpu
 	*Memory
 	Display
-	*Keyboard
+	Keyboard
 	Buzzer
 }
 
@@ -57,7 +57,7 @@ func NewCpu(buz Buzzer) *Cpu {
 	return c
 }
 
-func (cpu *Cpu) Run(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
+func (cpu *Cpu) Run(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 	for {
 		if cpu.Pc >= uint16(len(ram.Buf)) {
 			break
@@ -67,7 +67,7 @@ func (cpu *Cpu) Run(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 }
 
 // Tick
-func (cpu *Cpu) Tick(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
+func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 	op := ram.Buf[cpu.Pc : cpu.Pc+2]
 	inst := NewInstruction(op)
 	switch inst.o1 {
@@ -222,24 +222,18 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 		// TODO
 		if inst.o3 == 0x9 && inst.o4 == 0xE {
 			trace("Ex9E - SKP V%d", inst.o2)
-			pressed := keys.PressedKeys()
 			target := cpu.V[inst.o2]
-			for _, v := range pressed {
-				if v == target {
-					cpu.Pc += 2
-					break
-				}
+			pressed := keys.IsPressed(target)
+			if pressed {
+				cpu.Pc += 2
 			}
 		} else if inst.o3 == 0xA && inst.o4 == 0x1 {
 			trace("ExA1 - SKNP V%d", inst.o2)
 			cpu.Pc += 2 // skip is default
-			pressed := keys.PressedKeys()
 			target := cpu.V[inst.o2]
-			for _, v := range pressed {
-				if v == target {
-					cpu.Pc -= 2
-					break
-				}
+			pressed := keys.IsPressed(target)
+			if !pressed {
+				cpu.Pc += 2
 			}
 		} else {
 			panic(fmt.Sprintf("N/A: `%v`", inst))
@@ -252,17 +246,8 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys *Keyboard, buz Buzzer) {
 			cpu.V[inst.o2] = cpu.Dt.GetV()
 		case inst.o3 == 0x0 && inst.o4 == 0xA:
 			trace("Fx0A - LD V%d, K", inst.o2)
-			// TODO more less CPU consuption
-		BLOCK:
-			for {
-				pressed := keys.PressedKeys()
-				for _, key := range pressed {
-					if key == cpu.V[inst.o2] {
-						break BLOCK
-					}
-				}
-			}
-			// Fx0A - LD Vx, K; Wait for a key press, store the value of the key in Vx.
+			target := cpu.V[inst.o2]
+			keys.Wait(target)
 		case inst.o3 == 0x1 && inst.o4 == 0x5:
 			trace("Fx15 - LD DT, V%d", inst.o2)
 			cpu.Dt.SetV(cpu.V[inst.o2])
