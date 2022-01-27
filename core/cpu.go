@@ -68,6 +68,7 @@ func (cpu *Cpu) Run(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 
 // Tick
 func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
+	defer cpu.dump()
 	op := ram.Buf[cpu.Pc : cpu.Pc+2]
 	inst := NewInstruction(op)
 	switch inst.o1 {
@@ -275,6 +276,13 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 	// In memory, the first byte of each instruction should be located at an even addresses.
 	// If a program includes sprite data, it should be padded so any instructions following it will be properly situated in RAM.
 	cpu.Pc += 2
+}
+
+func (c *Cpu) dump() {
+	if !env.DEBUG {
+		return
+	}
+	fmt.Printf("regs:: v[%v], I: 0x%04x, Dt:%v, St:%v, Pc:0x%03x, Sp: %02d, Stack: %v\n", c.V, c.I, c.Dt.GetV(), c.St.GetV(), c.Pc, c.Sp, c.Stack)
 }
 
 func bcd(v uint8) (h, t, o uint8) {

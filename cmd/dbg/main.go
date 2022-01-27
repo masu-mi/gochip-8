@@ -58,10 +58,9 @@ func main() {
 	fmt.Printf("load: %d[byte]\n", n)
 
 	chip.Memory.WriteTo(os.Stdout)
-	// fmt.Printf("%v\n", chip.Memory.Buf)
 	num := 0
 	for range forRepl {
-		fmt.Printf("tick(%d): Pc: %04x(%d)", num, chip.Cpu.Pc, chip.Cpu.Pc)
+		fmt.Printf("tick(%d): Pc: %04x(%d)\n", num, chip.Cpu.Pc, chip.Cpu.Pc)
 		chip.Tick()
 		num++
 	}
