@@ -220,7 +220,6 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 			cpu.V[0xF] = 0
 		}
 	case 0xE:
-		// TODO
 		if inst.o3 == 0x9 && inst.o4 == 0xE {
 			trace("Ex9E - SKP V%d", inst.o2)
 			target := cpu.V[inst.o2]
@@ -230,7 +229,6 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 			}
 		} else if inst.o3 == 0xA && inst.o4 == 0x1 {
 			trace("ExA1 - SKNP V%d", inst.o2)
-			cpu.Pc += 2 // skip is default
 			target := cpu.V[inst.o2]
 			pressed := keys.IsPressed(target)
 			if !pressed {
@@ -240,7 +238,6 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 			panic(fmt.Sprintf("N/A: `%v`", inst))
 		}
 	case 0xF:
-		// TODO
 		switch {
 		case inst.o3 == 0x0 && inst.o4 == 0x7:
 			trace("Fx07 - LD V%d, DT", inst.o2)
