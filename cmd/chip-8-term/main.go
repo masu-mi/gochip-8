@@ -15,24 +15,20 @@ func main() {
 }
 
 func run() error {
-	cmd := newFoobarCommand()
+	cmd := newRootCommand()
 	return cmd.Execute()
 }
 
-func newFoobarCommand() *cobra.Command {
-	var (
-		fps uint8
-	)
-
+func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "chip-8-term",
-		Args: cobra.ExactArgs(1),
+		Args: cobra.ExactArgs(0),
 		RunE: func(_ *cobra.Command, args []string) error {
 			fmt.Printf("%v\n", args)
 			//
 			return nil
 		},
 	}
-	cmd.PersistentFlags().Uint8Var(&fps, "keyboard-hz", 60, "reciprocal of duration of key pressed (default: 60Hz)")
+	cmd.AddCommand(NewColorCmd(), NewStartCommand())
 	return cmd
 }
