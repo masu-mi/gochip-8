@@ -39,7 +39,7 @@ func main() {
 	}()
 
 	chip := &core.Chip8{
-		Cpu:      core.NewCpu(nil),
+		Cpu:      core.NewCpu(nil, nil),
 		Memory:   &core.Memory{},
 		Display:  &Ignore{},
 		Keyboard: NewKeyboard(forKeys, DefaultConvert),

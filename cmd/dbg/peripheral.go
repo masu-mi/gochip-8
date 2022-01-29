@@ -18,12 +18,11 @@ var _ core.Display = &Ignore{}
 
 type Keyboard struct {
 	sync.RWMutex
+	tty <-chan rune
 	time.Duration
-
-	tty    <-chan rune
-	events chan uint8
-
 	convert map[rune]uint8
+
+	events  chan uint8
 	pressed map[uint8]bool
 	timers  map[uint8]*time.Timer
 }
@@ -41,9 +40,11 @@ func NewKeyboard(tty <-chan rune, convert map[rune]uint8) *Keyboard {
 	dev := &Keyboard{
 		tty:      tty,
 		Duration: time.Second / time.Duration(60),
-		pressed:  map[uint8]bool{},
-		convert:  map[rune]uint8{},
-		events:   make(chan uint8),
+		convert:  convert,
+
+		events:  make(chan uint8),
+		pressed: map[uint8]bool{},
+		timers:  map[uint8]*time.Timer{},
 	}
 
 	go func() {
@@ -68,7 +69,7 @@ func (k *Keyboard) up(key uint8) {
 
 func (k *Keyboard) press(key uint8) {
 	k.RWMutex.Lock()
-	defer k.RWMutex.RUnlock()
+	defer k.RWMutex.Unlock()
 
 	k.pressed[key] = true
 	t, ok := k.timers[key]

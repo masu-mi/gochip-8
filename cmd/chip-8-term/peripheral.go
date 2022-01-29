@@ -52,11 +52,6 @@ func (t *Display) Clear() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 }
 func (t *Display) Draw(x, y uint8, sprite []byte) (collision bool) {
-	w, h := termbox.Size()
-	if !IsDisplaySizeSufficient(w, h) {
-		termbox.Close()
-		panic("terminal is too small")
-	}
 	for dh, b := range sprite {
 		for rdw := 0; rdw < 8; rdw++ {
 			input := (b >> rdw) & 1
@@ -72,19 +67,18 @@ func (t *Display) Draw(x, y uint8, sprite []byte) (collision bool) {
 		}
 	}
 	termbox.Flush()
-	return false
+	return collision
 }
 
 var _ core.Display = &Display{}
 
 type Keyboard struct {
 	sync.RWMutex
+	tty <-chan rune
 	time.Duration
-
-	tty    <-chan rune
-	events chan uint8
-
 	convert map[rune]uint8
+
+	events  chan uint8
 	pressed map[uint8]bool
 	timers  map[uint8]*time.Timer
 }
@@ -102,9 +96,11 @@ func NewKeyboard(tty <-chan rune, convert map[rune]uint8) *Keyboard {
 	dev := &Keyboard{
 		tty:      tty,
 		Duration: time.Second / time.Duration(fps),
-		pressed:  map[uint8]bool{},
-		convert:  map[rune]uint8{},
-		events:   make(chan uint8),
+		convert:  convert,
+
+		events:  make(chan uint8),
+		pressed: map[uint8]bool{},
+		timers:  map[uint8]*time.Timer{},
 	}
 
 	go func() {
@@ -128,15 +124,16 @@ func (k *Keyboard) up(key uint8) {
 }
 
 func (k *Keyboard) press(key uint8) {
-	k.RWMutex.Lock()
-	defer k.RWMutex.RUnlock()
+	k.Lock()
+	defer k.Unlock()
 
 	k.pressed[key] = true
 	t, ok := k.timers[key]
 	if !ok {
 		t = time.AfterFunc(k.Duration, func() { k.up(key) })
+	} else {
+		t.Reset(k.Duration)
 	}
-	t.Reset(k.Duration)
 	k.timers[key] = t
 	select {
 	case k.events <- key:
@@ -150,16 +147,11 @@ func (k *Keyboard) IsPressed(key uint8) bool {
 	return k.pressed[key]
 }
 func (k *Keyboard) Wait(key uint8) {
-	ch := make(chan struct{})
-	go func() {
-		for {
-			pressed := <-k.events
-			if pressed == key {
-				break
-			}
+	for {
+		pressed := <-k.events
+		if pressed == key {
+			break
 		}
-		defer close(ch)
-	}()
-	<-ch
+	}
 	return
 }

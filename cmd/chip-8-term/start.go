@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/masu-mi/gochip-8/core"
 	"github.com/mattn/go-tty"
@@ -12,6 +13,7 @@ import (
 )
 
 var (
+	cpuHz      int
 	fps        uint8
 	path       string
 	blockColor int64
@@ -23,6 +25,7 @@ func NewStartCommand() *cobra.Command {
 		Short: "start CHIP-8 emulator",
 		RunE:  start,
 	}
+	cmd.PersistentFlags().IntVar(&cpuHz, "cpu-hz", 1000, "reciprocal of duration of key pressed (default: 1kHz)")
 	cmd.PersistentFlags().Uint8Var(&fps, "keyboard-hz", 60, "reciprocal of duration of key pressed (default: 60Hz)")
 	cmd.PersistentFlags().StringVar(&path, "rom", "", "rom image file path")
 	cmd.PersistentFlags().Int64Var(&blockColor, "color", 16, "display active cell's color(defalt: 16)")
@@ -63,7 +66,7 @@ func start(_ *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 	chip := &core.Chip8{
-		Cpu:      core.NewCpu(nil),
+		Cpu:      core.NewCpu(time.NewTicker(time.Second/time.Duration(cpuHz)), nil),
 		Memory:   &core.Memory{},
 		Display:  dsp,
 		Keyboard: kb,

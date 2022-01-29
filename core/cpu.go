@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"time"
 
 	"github.com/masu-mi/gochip-8/env"
 )
@@ -36,6 +37,7 @@ func (chip *Chip8) Tick() {
 
 type Cpu struct {
 	*rand.Rand
+	Ticker *time.Ticker
 
 	V [16]uint8
 	I uint16
@@ -48,11 +50,12 @@ type Cpu struct {
 	Stack [16]uint16
 }
 
-func NewCpu(buz Buzzer) *Cpu {
+func NewCpu(tick *time.Ticker, buz Buzzer) *Cpu {
 	c := &Cpu{
-		Pc: StartOfProgram,
-		Dt: NewDelayedTimer(60, nil),
-		St: NewDelayedTimer(60, buz),
+		Pc:     StartOfProgram,
+		Dt:     NewDelayedTimer(60, nil),
+		St:     NewDelayedTimer(60, buz),
+		Ticker: time.NewTicker(time.Millisecond),
 	}
 	return c
 }
@@ -63,6 +66,7 @@ func (cpu *Cpu) Run(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 			break
 		}
 		cpu.Tick(ram, disp, keys, buz)
+		<-cpu.Ticker.C
 	}
 }
 
