@@ -16,7 +16,6 @@ Linux/macOS
 Go 1.17
 
 ## how to use it
-rics
 ```sh
 Usage:
   chip-8-term [command]
