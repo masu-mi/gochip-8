@@ -261,7 +261,7 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 			cpu.I += uint16(cpu.V[inst.o2])
 		case inst.o3 == 0x2 && inst.o4 == 0x9:
 			trace("Fx29 - LD F, V%d", inst.o2)
-			cpu.I = fontAddr(inst.o2)
+			cpu.I = fontAddr(cpu.V[inst.o2])
 		case inst.o3 == 0x3 && inst.o4 == 0x3:
 			trace("Fx33 - LD B, V%d", inst.o2)
 			ram.Buf[cpu.I], ram.Buf[cpu.I+1], ram.Buf[cpu.I+2] = bcd(cpu.V[inst.o2])
