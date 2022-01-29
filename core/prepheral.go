@@ -15,6 +15,11 @@ type Display interface {
 	Draw(x, y uint8, sprite []byte) (collision bool)
 }
 
+const (
+	WIDTH  = 64
+	HEIGHT = 32
+)
+
 type Keyboard interface {
 	IsPressed(key uint8) bool
 	Wait(key uint8)

@@ -23,11 +23,6 @@ func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "chip-8-term",
 		Args: cobra.ExactArgs(0),
-		RunE: func(_ *cobra.Command, args []string) error {
-			fmt.Printf("%v\n", args)
-			//
-			return nil
-		},
 	}
 	cmd.AddCommand(NewColorCmd(), NewStartCommand())
 	return cmd

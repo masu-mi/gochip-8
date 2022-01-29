@@ -1,20 +1,81 @@
 package main
 
 import (
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/masu-mi/gochip-8/core"
+	"github.com/nsf/termbox-go"
 )
 
-type Ignore struct{}
+type Display struct {
+	color termbox.Attribute
+}
 
-func (i *Ignore) Clear() {}
-func (i *Ignore) Draw(x, y uint8, sprite []byte) (collision bool) {
+func StarTermbox(color termbox.Attribute) (*Display, *Keyboard, error) {
+	e := termbox.Init()
+	if e != nil {
+		termbox.Close()
+		return nil, nil, e
+	}
+	w, h := termbox.Size()
+	if !IsDisplaySizeSufficient(w, h) {
+		termbox.Close()
+		return nil, nil, errors.New("terminal is too small")
+	}
+	ch := make(chan rune)
+	kb := NewKeyboard(ch, DefaultConvert)
+	go func() {
+	MAINLOOP:
+		for {
+			switch ev := termbox.PollEvent(); ev.Type {
+			case termbox.EventKey:
+				switch ev.Key {
+				case termbox.KeyEsc:
+					termbox.Close()
+					break MAINLOOP
+				default:
+					ch <- ev.Ch
+				}
+			}
+		}
+	}()
+	return &Display{color: color}, kb, nil
+}
+
+func IsDisplaySizeSufficient(w, h int) bool {
+	return w >= 64 && h >= 32
+}
+
+func (t *Display) Clear() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+}
+func (t *Display) Draw(x, y uint8, sprite []byte) (collision bool) {
+	w, h := termbox.Size()
+	if !IsDisplaySizeSufficient(w, h) {
+		termbox.Close()
+		panic("terminal is too small")
+	}
+	for dh, b := range sprite {
+		for rdw := 0; rdw < 8; rdw++ {
+			input := (b >> rdw) & 1
+			cx, cy := (int(x)+7-rdw)%core.WIDTH, (int(y)+dh)%core.HEIGHT
+			cell := termbox.GetCell(cx, cy)
+			col := cell.Bg == t.color && input == 1
+			if (cell.Bg == t.color || input == 1) && !col {
+				termbox.SetBg(cx, cy, t.color)
+			} else {
+				termbox.SetBg(cx, cy, termbox.ColorDefault)
+			}
+			collision = collision || col
+		}
+	}
+	termbox.Flush()
 	return false
 }
 
-var _ core.Display = &Ignore{}
+var _ core.Display = &Display{}
 
 type Keyboard struct {
 	sync.RWMutex
