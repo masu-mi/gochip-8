@@ -58,4 +58,6 @@ Z(A)|X(0)|C(B)|V(F)
   --rom './roms/games/Brix [Andreas Gustafsson, 1990].ch8'
 ```
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/EjCcRFEkgVc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+https://user-images.githubusercontent.com/603602/151666764-e90ff94c-21a7-416a-9d6a-630c34c33b42.mov
+ref. [youtube](https://www.youtube.com/watch?v=EjCcRFEkgVc)
