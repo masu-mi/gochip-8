@@ -27,7 +27,7 @@ func NewStartCommand() *cobra.Command {
 		RunE:  start,
 	}
 	cmd.PersistentFlags().IntVar(&cpuHz, "cpu-hz", 1000, "reciprocal of duration of key pressed (default: 1kHz)")
-	cmd.PersistentFlags().Uint8Var(&fps, "keyboard-hz", 60, "reciprocal of duration of key pressed (default: 60Hz)")
+	cmd.PersistentFlags().Uint8Var(&fps, "keyboard-hz", 10, "reciprocal of duration of key pressed (default: 10Hz)")
 	cmd.PersistentFlags().StringVar(&path, "rom", "", "rom image file path")
 	cmd.PersistentFlags().Int64Var(&blockColor, "color", 16, "display active cell's color(defalt: 16)")
 	return cmd
