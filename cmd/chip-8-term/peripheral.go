@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -13,16 +14,19 @@ type Display struct {
 	color termbox.Attribute
 }
 
-func StarTermbox(color termbox.Attribute) (*Display, *Keyboard, error) {
+func StarTermbox(ctx context.Context, color termbox.Attribute) (context.Context, *Display, *Keyboard, error) {
+	c, cancel := context.WithCancel(ctx)
 	e := termbox.Init()
 	if e != nil {
 		termbox.Close()
-		return nil, nil, e
+		cancel()
+		return c, nil, nil, e
 	}
 	w, h := termbox.Size()
 	if !IsDisplaySizeSufficient(w, h) {
 		termbox.Close()
-		return nil, nil, errors.New("terminal is too small")
+		cancel()
+		return c, nil, nil, errors.New("terminal is too small")
 	}
 	ch := make(chan rune)
 	kb := NewKeyboard(ch, DefaultConvert)
@@ -34,6 +38,7 @@ func StarTermbox(color termbox.Attribute) (*Display, *Keyboard, error) {
 				switch ev.Key {
 				case termbox.KeyEsc:
 					termbox.Close()
+					cancel()
 					break MAINLOOP
 				default:
 					ch <- ev.Ch
@@ -41,7 +46,7 @@ func StarTermbox(color termbox.Attribute) (*Display, *Keyboard, error) {
 			}
 		}
 	}()
-	return &Display{color: color}, kb, nil
+	return c, &Display{color: color}, kb, nil
 }
 
 func IsDisplaySizeSufficient(w, h int) bool {
@@ -146,11 +151,16 @@ func (k *Keyboard) IsPressed(key uint8) bool {
 	defer k.RUnlock()
 	return k.pressed[key]
 }
-func (k *Keyboard) Wait(key uint8) {
+func (k *Keyboard) Wait(ctx context.Context, key uint8) {
+LOOP:
 	for {
-		pressed := <-k.events
-		if pressed == key {
-			break
+		select {
+		case <-ctx.Done():
+			break LOOP
+		case pressed := <-k.events:
+			if pressed == key {
+				break LOOP
+			}
 		}
 	}
 	return

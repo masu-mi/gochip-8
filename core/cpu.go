@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
@@ -28,11 +29,11 @@ func (chip *Chip8) Init(rom io.Reader) (int, error) {
 	return chip.Memory.Load(StartOfProgram, rom)
 }
 
-func (chip *Chip8) Run() {
-	chip.Cpu.Run(chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
+func (chip *Chip8) Run(ctx context.Context) {
+	chip.Cpu.Run(ctx, chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
 }
 func (chip *Chip8) Tick() {
-	chip.Cpu.Tick(chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
+	chip.Cpu.Tick(context.Background(), chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
 }
 
 type Cpu struct {
@@ -60,18 +61,23 @@ func NewCpu(tick *time.Ticker, buz Buzzer) *Cpu {
 	return c
 }
 
-func (cpu *Cpu) Run(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
+func (cpu *Cpu) Run(ctx context.Context, ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
+LOOP:
 	for {
 		if cpu.Pc >= uint16(len(ram.Buf)) {
 			break
 		}
-		cpu.Tick(ram, disp, keys, buz)
-		<-cpu.Ticker.C
+		cpu.Tick(ctx, ram, disp, keys, buz)
+		select {
+		case <-cpu.Ticker.C:
+		case <-ctx.Done():
+			break LOOP
+		}
 	}
 }
 
 // Tick
-func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
+func (cpu *Cpu) Tick(ctx context.Context, ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 	defer cpu.dump()
 	op := ram.Buf[cpu.Pc : cpu.Pc+2]
 	inst := NewInstruction(op)
@@ -249,7 +255,7 @@ func (cpu *Cpu) Tick(ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 		case inst.o3 == 0x0 && inst.o4 == 0xA:
 			trace("Fx0A - LD V%d, K", inst.o2)
 			target := cpu.V[inst.o2]
-			keys.Wait(target)
+			keys.Wait(ctx, target)
 		case inst.o3 == 0x1 && inst.o4 == 0x5:
 			trace("Fx15 - LD DT, V%d", inst.o2)
 			cpu.Dt.SetV(cpu.V[inst.o2])

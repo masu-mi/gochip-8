@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -89,13 +90,18 @@ func (k *Keyboard) IsPressed(key uint8) bool {
 	defer k.RUnlock()
 	return k.pressed[key]
 }
-func (k *Keyboard) Wait(key uint8) {
+func (k *Keyboard) Wait(ctx context.Context, key uint8) {
 	ch := make(chan struct{})
 	go func() {
+	LOOP:
 		for {
-			pressed := <-k.events
-			if pressed == key {
-				break
+			select {
+			case <-ctx.Done():
+				break LOOP
+			case pressed := <-k.events:
+				if pressed == key {
+					break LOOP
+				}
 			}
 		}
 		defer close(ch)

@@ -1,5 +1,7 @@
 package core
 
+import "context"
+
 // Buzzer is called by SoundTimer
 type Buzzer interface {
 	Start()
@@ -22,5 +24,5 @@ const (
 
 type Keyboard interface {
 	IsPressed(key uint8) bool
-	Wait(key uint8)
+	Wait(ctx context.Context, key uint8)
 }

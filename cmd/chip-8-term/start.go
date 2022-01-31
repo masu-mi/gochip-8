@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -60,7 +61,7 @@ func start(_ *cobra.Command, args []string) error {
 			forRepl <- r
 		}
 	}()
-	dsp, kb, e := StarTermbox(termbox.Attribute(blockColor))
+	ctx, dsp, kb, e := StarTermbox(context.Background(), termbox.Attribute(blockColor))
 	if e != nil {
 		fmt.Println(e)
 		os.Exit(1)
@@ -75,6 +76,6 @@ func start(_ *cobra.Command, args []string) error {
 	if e != nil {
 		log.Fatalln(e)
 	}
-	chip.Run()
+	chip.Run(ctx)
 	return nil
 }
