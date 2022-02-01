@@ -1,7 +1,7 @@
 
 dest = ./dest
 
-all: $(dest)/dbg $(dest)/chip-8-term
+all: $(dest)/dbg $(dest)/gochip-8
 .PHONY: all
 
 $(dest):
@@ -10,5 +10,5 @@ $(dest):
 $(dest)/dbg: ./cmd/dbg/*.go ./core/* $(dest)
 	go build -o $@ -tags debug ./$(<D)
 
-$(dest)/chip-8-term: ./cmd/chip-8-term/*.go ./core/* $(dest)
+$(dest)/gochip-8: ./cmd/gochip-8/*.go ./core/* $(dest)
 	go build -o $@ ./$(<D)
