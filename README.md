@@ -1,5 +1,8 @@
 # gochip-8: CHIP-8 emulartor in Go
+![published to docker hub](https://github.com/masu-mi/gochip-8/actions/workflows/publish.yaml/badge.svg)
+
 gochip-8 is emulator of [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8).
+container image is stored in [Docker Hub](https://hub.docker.com/r/masumi/gochip-8).
 
 ## Build
 Download source code and build with `make`.
