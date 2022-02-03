@@ -21,7 +21,7 @@ Go 1.17
 ## how to use it
 ```sh
 Usage:
-  chip-8-term [command]
+  gochip-8 [command]
 
 Available Commands:
   color       show color chart
@@ -32,7 +32,7 @@ Available Commands:
 Flags:
   -h, --help   help for chip-8-term
 
-Use "chip-8-term [command] --help" for more information about a command.
+Use "gochip-8 [command] --help" for more information about a command.
 ```
 
 ### Keyboard layout
@@ -50,12 +50,12 @@ Z(A)|X(0)|C(B)|V(F)
 
 ```sh
 ## Space Invaders
-./dest/chip-8-term start \
+./dest/gochip-8 start \
   --color 6 --cpu-hz 300 --keyboard-hz 8 \
   --rom './roms/games/Space Invaders [David Winter].ch8'
 
 ## Brix
-./dest/chip-8-term start \
+./dest/gochip-8 start \
   --cpu-hz 300 --keyboard-hz 8 \
   --rom './roms/games/Brix [Andreas Gustafsson, 1990].ch8'
 ```
