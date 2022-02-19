@@ -32,8 +32,8 @@ func (chip *Chip8) Init(rom io.Reader) (int, error) {
 func (chip *Chip8) Run(ctx context.Context) {
 	chip.Cpu.Run(ctx, chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
 }
-func (chip *Chip8) Tick() {
-	chip.Cpu.Tick(context.Background(), chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
+func (chip *Chip8) Cycle() {
+	chip.Cpu.Cycle(context.Background(), chip.Memory, chip.Display, chip.Keyboard, chip.Buzzer)
 }
 
 type Cpu struct {
@@ -67,7 +67,7 @@ LOOP:
 		if cpu.Pc >= uint16(len(ram.Buf)) {
 			break
 		}
-		cpu.Tick(ctx, ram, disp, keys, buz)
+		cpu.Cycle(ctx, ram, disp, keys, buz)
 		select {
 		case <-cpu.Ticker.C:
 		case <-ctx.Done():
@@ -76,8 +76,8 @@ LOOP:
 	}
 }
 
-// Tick
-func (cpu *Cpu) Tick(ctx context.Context, ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
+// Cycle
+func (cpu *Cpu) Cycle(ctx context.Context, ram *Memory, disp Display, keys Keyboard, buz Buzzer) {
 	defer cpu.dump()
 	op := ram.Buf[cpu.Pc : cpu.Pc+2]
 	inst := NewInstruction(op)

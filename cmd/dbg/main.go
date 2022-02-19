@@ -59,7 +59,7 @@ func main() {
 	num := 0
 	for range forRepl {
 		fmt.Printf("tick(%d): Pc: %04x(%d)\n", num, chip.Cpu.Pc, chip.Cpu.Pc)
-		chip.Tick()
+		chip.Cycle()
 		num++
 	}
 }
