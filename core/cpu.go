@@ -56,7 +56,7 @@ func NewCpu(tick *time.Ticker, buz Buzzer) *Cpu {
 		Pc:     StartOfProgram,
 		Dt:     NewDelayedTimer(60, nil),
 		St:     NewDelayedTimer(60, buz),
-		Ticker: time.NewTicker(time.Millisecond),
+		Ticker: tick,
 	}
 	return c
 }
